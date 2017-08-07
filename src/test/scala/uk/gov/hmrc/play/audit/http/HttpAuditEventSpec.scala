@@ -18,6 +18,7 @@ package uk.gov.hmrc.play.audit.http
 
 import org.scalatest.{LoneElement, Matchers, WordSpecLike}
 import play.api.test.{FakeRequest, WithApplication}
+import uk.gov.hmrc.http.HeaderCarrier
 
 class HttpAuditEventSpec extends WordSpecLike with Matchers with LoneElement {
 
@@ -47,6 +48,8 @@ class HttpAuditEventSpec extends WordSpecLike with Matchers with LoneElement {
   }
 
   "The code to generate an audit event" should {
+
+    implicit val hc = new HeaderCarrier()
 
     object HttpAuditEventForTest extends HttpAuditEvent {
       override def appName: String = "my-test-app"

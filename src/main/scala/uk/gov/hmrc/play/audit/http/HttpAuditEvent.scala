@@ -39,7 +39,7 @@ trait HttpAuditEvent {
   }
 
   protected[http] def dataEvent(eventType: String, transactionName: String, request: RequestHeader)
-                               (implicit hc: HeaderCarrier = PlayHeaderCarrier.fromHeadersAndSession(request.headers)) = {
+                               (implicit hc: HeaderCarrier) = {
 
     import auditDetailKeys._
     import headers._

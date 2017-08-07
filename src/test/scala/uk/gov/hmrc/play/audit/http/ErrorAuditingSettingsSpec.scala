@@ -23,7 +23,7 @@ import uk.gov.hmrc.http.JsValidationException
 import uk.gov.hmrc.play.audit.EventTypes
 import uk.gov.hmrc.play.audit.http.config.ErrorAuditingSettings
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, MockAuditConnector}
-import uk.gov.hmrc.play.http.NotFoundException
+import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.test.Concurrent.await
 import uk.gov.hmrc.play.test.DummyRequestHeader
 

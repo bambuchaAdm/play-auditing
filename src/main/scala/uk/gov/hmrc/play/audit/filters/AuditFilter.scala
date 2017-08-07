@@ -25,9 +25,10 @@ import play.api.http.HttpEntity
 import play.api.http.HttpEntity.Streamed
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{Result, _}
+import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.audit.EventKeys._
 import uk.gov.hmrc.play.audit.EventTypes
-import uk.gov.hmrc.play.audit.http.{HttpAuditEvent, PlayHeaderCarrier}
+import uk.gov.hmrc.play.audit.http.HttpAuditEvent
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -103,7 +104,7 @@ trait AuditFilter extends EssentialFilter with HttpAuditEvent {
   def apply(nextFilter: EssentialAction) = new EssentialAction {
     def apply(requestHeader: RequestHeader) = {
       val next: Accumulator[ByteString, Result] = nextFilter(requestHeader)
-      implicit val hc = PlayHeaderCarrier.fromHeadersAndSession(requestHeader.headers)
+      implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(requestHeader.headers)
 
       val loggingContext = s"${requestHeader.method} ${requestHeader.uri}"
 

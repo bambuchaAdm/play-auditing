@@ -22,6 +22,7 @@ import uk.gov.hmrc.play.audit.EventKeys._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.HeaderNames._
 import AuditExtensions._
+import uk.gov.hmrc.http.logging._
 
 class AuditTagsSpec extends WordSpecLike with Matchers {
 

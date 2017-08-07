@@ -22,7 +22,8 @@ import uk.gov.hmrc.http.JsValidationException
 import uk.gov.hmrc.play.audit.EventTypes._
 import uk.gov.hmrc.play.audit.http.HttpAuditEvent
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.http.NotFoundException
+import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.play.HeaderCarrierConverter
 
 import scala.concurrent.Future
 
@@ -42,18 +43,18 @@ trait ErrorAuditingSettings extends GlobalSettings with HttpAuditEvent {
       case _ => ServerInternalError
     }
 
-    auditConnector.sendEvent(dataEvent(code, unexpectedError, request)
+    auditConnector.sendEvent(dataEvent(code, unexpectedError, request)(HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session)))
       .withDetail((TransactionFailureReason, ex.getMessage)))
     super.onError(request, ex)
   }
 
   override def onHandlerNotFound(request: RequestHeader): Future[Result] = {
-    auditConnector.sendEvent(dataEvent(ResourceNotFound, notFoundError, request))
+    auditConnector.sendEvent(dataEvent(ResourceNotFound, notFoundError, request)(HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))))
     super.onHandlerNotFound(request)
   }
 
   override def onBadRequest(request: RequestHeader, error: String): Future[Result] = {
-    auditConnector.sendEvent(dataEvent(ServerValidationError, badRequestError, request))
+    auditConnector.sendEvent(dataEvent(ServerValidationError, badRequestError, request)(HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))))
     super.onBadRequest(request, error)
   }
 }
