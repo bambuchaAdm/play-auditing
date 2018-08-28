@@ -16,7 +16,11 @@
 
 package uk.gov.hmrc.play.audit.http.connector
 
+import java.util.UUID
+
 import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.audit.{HandlerResult, handler, serialiser}
 import uk.gov.hmrc.audit.handler.{AuditHandler, DatastreamHandler, LoggingHandler}
 import uk.gov.hmrc.audit.serialiser.{AuditSerialiser, AuditSerialiserLike}
@@ -24,6 +28,7 @@ import uk.gov.hmrc.play.audit.http.config.{AuditingConfig, BaseUri, Consumer}
 import uk.gov.hmrc.play.audit.model.{DataEvent, ExtendedDataEvent, MergedDataEvent}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
+import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait AuditResult
@@ -64,6 +69,25 @@ trait AuditConnector {
   def auditSerialiser: AuditSerialiserLike = AuditSerialiser
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
+
+  def sendExplicitAudit(auditType:String, detail:Map[String,String])(implicit request:RequestHeader, hc:HeaderCarrier, ec : ExecutionContext):Unit = {
+    sendExplicitAudit(auditType, Json.toJson(detail).as[JsObject])
+  }
+
+  def sendExplicitAudit[T](auditType:String, detail:T)(implicit request:RequestHeader, hc:HeaderCarrier, ec : ExecutionContext, writes:Writes[T]):Unit = {
+    sendExplicitAudit(auditType, Json.toJson(detail).as[JsObject])
+  }
+
+  def sendExplicitAudit(auditType:String, detail:JsObject)(implicit request:RequestHeader, hc:HeaderCarrier, ec : ExecutionContext):Unit = {
+    sendExtendedEvent(ExtendedDataEvent(
+      auditSource = auditingConfig.auditSource,
+      auditType = auditType,
+      eventId = UUID.randomUUID().toString,
+      tags = hc.toAuditTags(path=request.path),
+      detail = detail,
+      generatedAt = DateTimeUtils.now
+    ))
+  }
 
   def sendEvent(event: DataEvent)(implicit hc: HeaderCarrier = HeaderCarrier(), ec : ExecutionContext): Future[AuditResult] = {
     ifEnabled(send, auditSerialiser.serialise(event.copy(tags=hc.fixTags(event.tags))), simpleDatastreamHandler)
