@@ -40,7 +40,8 @@ object HmrcBuild extends Build {
 private object AppDependencies {
 
   val compile = Seq(
-    "uk.gov.hmrc" %% "http-core" % "0.7.0",
+    "uk.gov.hmrc"       %% "time"      % "3.1.0",
+    "uk.gov.hmrc" %% "http-core" % "1.3.0-SNAPSHOT",
     "org.slf4j" % "slf4j-api" % "1.7.5"
   )
 

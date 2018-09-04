@@ -28,8 +28,13 @@ object AuditExtensions {
       "clientIP" -> carrier.trueClientIp.getOrElse("-"),
       "clientPort" -> carrier.trueClientPort.getOrElse("-"),
       "Akamai-Reputation" -> carrier.akamaiReputation.getOrElse(AkamaiReputation("-")).value,
-      carrier.names.deviceID -> carrier.deviceID.getOrElse("-")
+      carrier.names.deviceID -> carrier.deviceID.getOrElse("-"),
+      "path" -> carrier.frontendPath.getOrElse("-")
     )
+
+    def toAuditTags():Map[String,String] = {
+      auditTags
+    }
 
     def toAuditTags(transactionName: String, path: String): Map[String, String] = {
       auditTags ++ Map[String, String](
@@ -37,8 +42,6 @@ object AuditExtensions {
         Path -> path
       )
     }
-
-    def toAuditTags(path: String): Map[String, String] = auditTags ++ Map[String, String](Path -> path)
 
     def toAuditDetails(details: (String, String)*): Map[String, String] = details.toMap
 

@@ -167,8 +167,8 @@ class AuditConnectorSpec extends WordSpecLike with MustMatchers with ScalaFuture
       "call Datastream with tags read from headerCarrier" in {
         when(mockSimpleDatastreamHandler.sendEvent(anyString())).thenReturn(HandlerResult.Success)
 
-        val headerCarrier = HeaderCarrier(sessionId = Some(SessionId("session-123")))
-        mockConnector(enabledConfig).sendExplicitAudit("theAuditType", "/a/b/c", Map("a" -> "1"))(headerCarrier, RunInlineExecutionContext)
+        val headerCarrier = HeaderCarrier(sessionId = Some(SessionId("session-123")), frontendPath = Some("/a/b/c"))
+        mockConnector(enabledConfig).sendExplicitAudit("theAuditType", Map("a" -> "1"))(headerCarrier, RunInlineExecutionContext)
 
         val captor = ArgumentCaptor.forClass(classOf[String])
         verify(mockSimpleDatastreamHandler).sendEvent(captor.capture())
@@ -186,8 +186,8 @@ class AuditConnectorSpec extends WordSpecLike with MustMatchers with ScalaFuture
 
         val writes = Json.writes[MyExampleAudit]
 
-        val headerCarrier = HeaderCarrier(sessionId = Some(SessionId("session-123")))
-        mockConnector(enabledConfig).sendExplicitAudit("theAuditType", "/a/b/c", MyExampleAudit("Agent","123"))(headerCarrier, RunInlineExecutionContext, writes)
+        val headerCarrier = HeaderCarrier(sessionId = Some(SessionId("session-123")), frontendPath = Some("/a/b/c"))
+        mockConnector(enabledConfig).sendExplicitAudit("theAuditType", MyExampleAudit("Agent","123"))(headerCarrier, RunInlineExecutionContext, writes)
 
         val captor = ArgumentCaptor.forClass(classOf[String])
         verify(mockSimpleDatastreamHandler).sendEvent(captor.capture())
@@ -207,8 +207,8 @@ class AuditConnectorSpec extends WordSpecLike with MustMatchers with ScalaFuture
       when(mockSimpleDatastreamHandler.sendEvent(anyString())).thenReturn(HandlerResult.Success)
 
       val expectedDetail = Json.obj("Address" -> Json.obj("line1" -> "Road", "postCode" -> "123"))
-      val headerCarrier = HeaderCarrier(sessionId = Some(SessionId("session-123")))
-      mockConnector(enabledConfig).sendExplicitAudit("theAuditType", "/a/b/c", expectedDetail)(headerCarrier, RunInlineExecutionContext)
+      val headerCarrier = HeaderCarrier(sessionId = Some(SessionId("session-123")), frontendPath = Some("/a/b/c"))
+      mockConnector(enabledConfig).sendExplicitAudit("theAuditType", expectedDetail)(headerCarrier, RunInlineExecutionContext)
 
       val captor = ArgumentCaptor.forClass(classOf[String])
       verify(mockSimpleDatastreamHandler).sendEvent(captor.capture())

@@ -74,7 +74,7 @@ trait HttpAuditing extends DateTimeUtils {
     MergedDataEvent(
       auditSource = appName,
       auditType = outboundCallAuditType,
-      request = DataCall(hc.toAuditTags(request.url), requestDetails(request), request.generatedAt),
+      request = DataCall(hc.toAuditTags() ++ Map("path" -> request.url), requestDetails(request), request.generatedAt),
       response = DataCall(Map.empty, responseDetails, now))
   }
 

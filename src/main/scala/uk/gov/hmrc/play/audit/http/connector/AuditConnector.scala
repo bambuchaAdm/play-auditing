@@ -69,20 +69,20 @@ trait AuditConnector {
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def sendExplicitAudit(auditType:String, path:String, detail:Map[String,String])(implicit hc:HeaderCarrier, ec : ExecutionContext):Unit = {
-    sendExplicitAudit(auditType, path, Json.toJson(detail).as[JsObject])
+  def sendExplicitAudit(auditType:String, detail:Map[String,String])(implicit hc:HeaderCarrier, ec : ExecutionContext):Unit = {
+    sendExplicitAudit(auditType, Json.toJson(detail).as[JsObject])
   }
 
-  def sendExplicitAudit[T](auditType:String, path:String, detail:T)(implicit hc:HeaderCarrier, ec : ExecutionContext, writes:Writes[T]):Unit = {
-    sendExplicitAudit(auditType, path, Json.toJson(detail).as[JsObject])
+  def sendExplicitAudit[T](auditType:String, detail:T)(implicit hc:HeaderCarrier, ec : ExecutionContext, writes:Writes[T]):Unit = {
+    sendExplicitAudit(auditType, Json.toJson(detail).as[JsObject])
   }
 
-  def sendExplicitAudit(auditType:String, path:String, detail:JsObject)(implicit hc:HeaderCarrier, ec : ExecutionContext):Unit = {
+  def sendExplicitAudit(auditType:String, detail:JsObject)(implicit hc:HeaderCarrier, ec : ExecutionContext):Unit = {
     sendExtendedEvent(ExtendedDataEvent(
       auditSource = auditingConfig.auditSource,
       auditType = auditType,
       eventId = UUID.randomUUID().toString,
-      tags = hc.toAuditTags(path=path),
+      tags = hc.toAuditTags(),
       detail = detail,
       generatedAt = DateTimeUtils.now
     ))

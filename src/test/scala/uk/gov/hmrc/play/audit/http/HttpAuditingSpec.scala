@@ -79,7 +79,7 @@ class HttpAuditingSpec extends WordSpecLike with Matchers with Inspectors with E
 
       whenAuditSuccess(connector)
 
-      implicit val hcWithHeaders = HeaderCarrier(deviceID = Some(deviceID)).withExtraHeaders("Surrogate" -> "true")
+      implicit val hcWithHeaders = HeaderCarrier(deviceID = Some(deviceID), frontendPath = Some("/a/b")).withExtraHeaders("Surrogate" -> "true")
       httpWithAudit.auditRequestWithResponseF(serviceUri, getVerb, requestBody, response)
 
       eventually(timeout(Span(1, Seconds))) {

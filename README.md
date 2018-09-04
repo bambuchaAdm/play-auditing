@@ -44,14 +44,11 @@ If you are using bootstrap-play-25 you should be able to inject AuditConnector.
 If you have an older project there should be an existing scala object which extends AuditConnector.
 AuditConnector has 3 methods for explicit audits. Use whichever you prefer.
  ```scala
- auditConnector.sendExplicitAudit("theAuditType", request.path, ExampleAuditData("123"))
- auditConnector.sendExplicitAudit("theAuditType", request.path, Json.obj("vrn" -> "123", "some" -> Json.obj("nested" -> "value")))
- auditConnector.sendExplicitAudit("theAuditType", request.path, Map("vrn" -> "123"))
+ auditConnector.sendExplicitAudit("theAuditType", ExampleAuditData("123"))
+ auditConnector.sendExplicitAudit("theAuditType", Json.obj("vrn" -> "123", "some" -> Json.obj("nested" -> "value")))
+ auditConnector.sendExplicitAudit("theAuditType", Map("vrn" -> "123"))
 ```
-The sendExplicitAudit methods need the implicit parameter HeaderCarrier. If you don't already have this you can create it with
-```scala
-HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))))
-```
+The sendExplicitAudit methods need the implicit parameter HeaderCarrier. This is defined in BaseController
 
 ## Configuration
 
