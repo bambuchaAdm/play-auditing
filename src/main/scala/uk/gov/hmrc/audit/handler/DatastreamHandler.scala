@@ -21,6 +21,7 @@ import java.net.URL
 import org.slf4j.{Logger, LoggerFactory}
 import uk.gov.hmrc.audit.HandlerResult
 import uk.gov.hmrc.audit.HandlerResult.{Failure, Rejected, Success}
+import uk.gov.hmrc.http.HeaderCarrier
 
 class DatastreamHandler(scheme: String, host: String, port: Integer, path: String, connectTimeout: Integer, requestTimeout: Integer)
   extends HttpHandler(new URL(s"$scheme://$host:$port$path"), connectTimeout, requestTimeout)
@@ -28,7 +29,7 @@ class DatastreamHandler(scheme: String, host: String, port: Integer, path: Strin
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  override def sendEvent(event: String): HandlerResult = {
+  override def sendEvent(event: String)(implicit hc:HeaderCarrier): HandlerResult = {
     sendEvent(event, retryIfMalformed = true)
   }
 

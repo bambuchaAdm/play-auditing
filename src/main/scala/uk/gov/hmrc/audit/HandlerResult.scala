@@ -21,4 +21,5 @@ object HandlerResult {
   case object Success extends HandlerResult
   case object Rejected extends HandlerResult
   case object Failure extends HandlerResult
+  case object Disabled extends HandlerResult
 }

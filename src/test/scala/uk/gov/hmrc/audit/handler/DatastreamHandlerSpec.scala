@@ -27,6 +27,7 @@ import com.github.tomakehurst.wiremock.stubbing.Scenario
 import org.scalatest._
 import uk.gov.hmrc.audit.HandlerResult
 import uk.gov.hmrc.audit.HandlerResult.{Failure, Rejected, Success}
+import uk.gov.hmrc.http.HeaderCarrier
 
 class DatastreamHandlerUnitSpec extends WordSpecLike with Inspectors with Matchers {
 
@@ -36,6 +37,8 @@ class DatastreamHandlerUnitSpec extends WordSpecLike with Inspectors with Matche
       HttpResult.Response(event.toInt)
     }
   }
+
+  implicit val hc = HeaderCarrier()
 
   "Any Datastream response" should {
     "Return Success for any response code of 204" in {
@@ -69,6 +72,8 @@ class DatastreamHandlerWireSpec extends WordSpecLike with Inspectors with Matche
     path = datastreamPath,
     connectTimeout = 2000,
     requestTimeout = 2000)
+
+  implicit val hc = HeaderCarrier()
 
   val wireMock = new WireMockServer(datastreamTestPort)
 

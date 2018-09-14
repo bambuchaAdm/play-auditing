@@ -20,11 +20,13 @@ import org.mockito.Mockito._
 import org.scalatest.WordSpecLike
 import org.scalatest.mockito.MockitoSugar
 import org.slf4j.Logger
+import uk.gov.hmrc.http.HeaderCarrier
 
 class LoggingHandlerSpec extends WordSpecLike with MockitoSugar {
 
   val mockLog: Logger = mock[Logger]
   val loggingHandler = new LoggingHandler(mockLog)
+  implicit val hc = HeaderCarrier()
 
   "When logging an error, the message" should {
     "Start with a known value so that downstream processing knows how to deal with it" in {

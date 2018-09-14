@@ -18,6 +18,7 @@ package uk.gov.hmrc.audit.handler
 
 import org.slf4j.{Logger, LoggerFactory}
 import uk.gov.hmrc.audit.HandlerResult
+import uk.gov.hmrc.http.HeaderCarrier
 
 class LoggingHandler(log: Logger) extends AuditHandler {
 
@@ -25,7 +26,7 @@ class LoggingHandler(log: Logger) extends AuditHandler {
 
   def makeFailureMessage(event: String): String = s"$ErrorKey : audit item : $event"
 
-  def sendEvent(event: String): HandlerResult = {
+  def sendEvent(event: String)(implicit hc:HeaderCarrier): HandlerResult = {
     val message = makeFailureMessage(event)
     log.warn(message)
     HandlerResult.Success

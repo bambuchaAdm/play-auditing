@@ -16,8 +16,21 @@
 
 package uk.gov.hmrc.audit.handler
 
+import org.slf4j.LoggerFactory
 import uk.gov.hmrc.audit.HandlerResult
+import uk.gov.hmrc.http.HeaderCarrier
 
 trait AuditHandler {
-  def sendEvent(event: String): HandlerResult
+  def sendEvent(event: String)(implicit hc:HeaderCarrier): HandlerResult
+}
+
+object DisabledAuditHandler extends AuditHandler {
+
+  private val log = LoggerFactory.getLogger(getClass)
+
+  override def sendEvent(event: String)(implicit hc: HeaderCarrier): HandlerResult = {
+    log.info(s"auditing disabled for request-id ${hc.requestId}, session-id: ${hc.sessionId}")
+    HandlerResult.Disabled
+  }
+
 }

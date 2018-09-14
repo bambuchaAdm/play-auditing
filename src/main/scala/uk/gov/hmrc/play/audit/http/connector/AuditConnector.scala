@@ -21,13 +21,14 @@ import java.util.UUID
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{JsObject, Json, Writes}
 import uk.gov.hmrc.audit.{HandlerResult, handler, serialiser}
-import uk.gov.hmrc.audit.handler.{AuditHandler, DatastreamHandler, LoggingHandler}
+import uk.gov.hmrc.audit.handler.{AuditHandler, DatastreamHandler, DisabledAuditHandler, LoggingHandler}
 import uk.gov.hmrc.audit.serialiser.{AuditSerialiser, AuditSerialiserLike}
 import uk.gov.hmrc.play.audit.http.config.{AuditingConfig, BaseUri, Consumer}
 import uk.gov.hmrc.play.audit.model.{DataEvent, ExtendedDataEvent, MergedDataEvent}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions._
 import uk.gov.hmrc.time.DateTimeUtils
+
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait AuditResult
@@ -42,29 +43,40 @@ object AuditResult {
         Success
       case HandlerResult.Rejected =>
         Failure("Event was actively rejected")
+      case HandlerResult.Disabled =>
+        AuditResult.Disabled
       case HandlerResult.Failure =>
         Failure("Event sending failed")
     }
   }
 }
 
-trait AuditConnector {
-  def auditingConfig: AuditingConfig
+class DefaultAuditConnector(auditingConfig: AuditingConfig) extends AuditConnector {
 
   val defaultConnectionTimeout = 5000
   val defaultRequestTimeout = 5000
-  val defaultBaseUri = BaseUri("datastream.protected.mdtp", 90, "http")
 
-  lazy val consumer: Consumer = auditingConfig.consumer.getOrElse(Consumer(defaultBaseUri))
-  lazy val baseUri: BaseUri = consumer.baseUri
+  val auditHandler = {
+    if (auditingConfig.enabled) {
+      val consumer: Consumer = auditingConfig.consumer.getOrElse(
+        throw new Exception("the datastream base uri must be provided (usually in application.conf)")
+      )
+      new DatastreamHandler(consumer.baseUri.protocol, consumer.baseUri.host,
+        consumer.baseUri.port, s"/${consumer.singleEventUri}", defaultConnectionTimeout, defaultRequestTimeout)
+    } else {
+      DisabledAuditHandler
+    }
+  }
 
-  def simpleDatastreamHandler: AuditHandler = new DatastreamHandler(baseUri.protocol, baseUri.host,
-    baseUri.port, s"/${consumer.singleEventUri}", defaultConnectionTimeout, defaultRequestTimeout)
+  val auditSource = auditingConfig.auditSource
 
-  def mergedDatastreamHandler: AuditHandler = new DatastreamHandler(baseUri.protocol, baseUri.host,
-    baseUri.port, s"/${consumer.mergedEventUri}", defaultConnectionTimeout, defaultRequestTimeout)
+}
+
+trait AuditConnector {
 
   def loggingConnector: AuditHandler = LoggingHandler
+  def auditHandler:AuditHandler
+  def auditSource:String
   def auditSerialiser: AuditSerialiserLike = AuditSerialiser
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
@@ -77,7 +89,7 @@ trait AuditConnector {
 
   def sendExplicitAudit(auditType: String, detail: JsObject)(implicit hc: HeaderCarrier, ec: ExecutionContext):Unit = {
     sendExtendedEvent(ExtendedDataEvent(
-      auditSource = auditingConfig.auditSource,
+      auditSource = auditSource,
       auditType = auditType,
       eventId = UUID.randomUUID().toString,
       tags = hc.toAuditTags(),
@@ -87,33 +99,30 @@ trait AuditConnector {
   }
 
   def sendEvent(event: DataEvent)(implicit hc: HeaderCarrier = HeaderCarrier(), ec : ExecutionContext): Future[AuditResult] = {
-    ifEnabled(send, auditSerialiser.serialise(event.copy(tags=hc.appendToDefaultTags(event.tags))), simpleDatastreamHandler)
+    ifEnabled(auditSerialiser.serialise(event.copy(tags=hc.appendToDefaultTags(event.tags))))
   }
 
   def sendExtendedEvent(event: ExtendedDataEvent)(implicit hc: HeaderCarrier = HeaderCarrier(), ec : ExecutionContext): Future[AuditResult] = {
-    ifEnabled(send, auditSerialiser.serialise(event.copy(tags=hc.appendToDefaultTags(event.tags))), simpleDatastreamHandler)
+    ifEnabled(auditSerialiser.serialise(event.copy(tags=hc.appendToDefaultTags(event.tags))))
   }
 
   def sendMergedEvent(event: MergedDataEvent)(implicit hc: HeaderCarrier = HeaderCarrier(), ec : ExecutionContext): Future[AuditResult] = {
-    ifEnabled(send, auditSerialiser.serialise(event), mergedDatastreamHandler)
+    ifEnabled(auditSerialiser.serialise(event))
   }
 
-  private def ifEnabled(func: (String, AuditHandler) => Future[HandlerResult], event: String, handler: AuditHandler)(implicit hc: HeaderCarrier, ec : ExecutionContext): Future[AuditResult] = {
-    if (auditingConfig.enabled) {
-      func.apply(event, handler).map(result => AuditResult.fromHandlerResult(result))
-    } else {
-      log.info(s"auditing disabled for request-id ${hc.requestId}, session-id: ${hc.sessionId}")
-      Future.successful(AuditResult.Disabled)
-    }
+  private def ifEnabled(event: String)(implicit hc: HeaderCarrier, ec : ExecutionContext): Future[AuditResult] = {
+    send(event) map (result => AuditResult.fromHandlerResult(result))
   }
 
-  private def send(event: String, datastreamHandler: AuditHandler)(implicit ec: ExecutionContext): Future[HandlerResult] = Future {
+  private def send(event: String)(implicit hc:HeaderCarrier, ec: ExecutionContext): Future[HandlerResult] = Future {
     try {
-      val result: HandlerResult = datastreamHandler.sendEvent(event)
+      val result: HandlerResult = auditHandler.sendEvent(event)
       result match {
         case HandlerResult.Success =>
           result
         case HandlerResult.Rejected =>
+          result
+        case HandlerResult.Disabled =>
           result
         case HandlerResult.Failure =>
           loggingConnector.sendEvent(event)
