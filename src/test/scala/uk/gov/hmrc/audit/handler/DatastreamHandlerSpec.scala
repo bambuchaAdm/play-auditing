@@ -32,7 +32,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 class DatastreamHandlerUnitSpec extends WordSpecLike with Inspectors with Matchers {
 
   val datastreamHandler = new DatastreamHandler("http", "localhost", 1234,
-    "/some/path", 2000, 2000) {
+    "/some/path", 2000, 2000, "the-micro-service-name") {
     override def sendHttpRequest(event: String): HttpResult = {
       HttpResult.Response(event.toInt)
     }
@@ -71,7 +71,9 @@ class DatastreamHandlerWireSpec extends WordSpecLike with Inspectors with Matche
     port = datastreamTestPort,
     path = datastreamPath,
     connectTimeout = 2000,
-    requestTimeout = 2000)
+    requestTimeout = 2000,
+    userAgent = "the-micro-service-name"
+  )
 
   implicit val hc = HeaderCarrier()
 
@@ -111,6 +113,14 @@ class DatastreamHandlerWireSpec extends WordSpecLike with Inspectors with Matche
   "Successful call to Datastream" should {
     "Return a Success result" in {
       verifySingleCall("SUCCESS", 204, Success)
+    }
+  }
+
+  "All calls to Datastream" should {
+    "set the user-agent" in {
+      stub("EVENT", 204)
+      val result = datastreamHandler.sendEvent("EVENT")
+      WireMock.verify(1, postRequestedFor(urlPathEqualTo(datastreamPath)).withHeader("User-Agent", equalTo("the-micro-service-name")))
     }
   }
 

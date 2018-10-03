@@ -62,7 +62,9 @@ class DefaultAuditConnector(auditingConfig: AuditingConfig) extends AuditConnect
         throw new Exception("the datastream base uri must be provided (usually in application.conf)")
       )
       new DatastreamHandler(consumer.baseUri.protocol, consumer.baseUri.host,
-        consumer.baseUri.port, s"/${consumer.singleEventUri}", defaultConnectionTimeout, defaultRequestTimeout)
+        consumer.baseUri.port, s"/${consumer.singleEventUri}", defaultConnectionTimeout, defaultRequestTimeout,
+        auditingConfig.auditSource
+      )
     } else {
       DisabledAuditHandler
     }
